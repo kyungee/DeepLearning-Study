@@ -16,16 +16,17 @@ class Model(nn.Module):
         self.fc1 = nn.Linear(4 * 4 * 50, 500)
         self.fc2 = nn.Linear(500, 10)
 
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, kernel_size=2, stride=2)
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, kernel_size=2, stride=2)
+    def forward(self, x): ## x.shape -> batch-size, channel, height, weight
+        x = F.relu(self.conv1(x)) ## 24x24x20
+        x = F.max_pool2d(x, kernel_size=2, stride=2) ## 12x12x20
+        x = F.relu(self.conv2(x)) ## 8x8x50
+        x = F.max_pool2d(x, kernel_size=2, stride=2) ## 4x4x50
 
-        x = x.view(-1, 4 * 4 * 50) # [batch_size, 50, 4, 4]
+        ## batch-size x 800 으로 펴겠다
+        x = x.view(-1, 4 * 4 * 50) # [batch_size, 50, 4, 4] -> 풀리커넥트 만들기, batch-size 모르기때문에 일단 -1로
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        return x
+        return x ## batch-size x 10
 
 def train(model, device, train_loader, epoch, optimizer, criterion):
     model.train()
@@ -50,7 +51,7 @@ def test(model, device, test_loader, criterion):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += criterion(output, target).item() # sum up batch loss
+            test_loss += criterion(output, target).item() # sum up batch loss, target은 batch-size 수
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
